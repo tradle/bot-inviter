@@ -8,6 +8,6 @@ module.exports = {
   REQUEST_CONTACT_INFO: 'Please provide your name, and the email associated with your iOS device, so that we can send you an invite. If you want to send us a photo too, I suppose we can\'t stop you.',
   ALREADY_CONFIRMED: 'You already confirmed your email. Too late to change your mind now.',
   RESENDING_INVITE: 'Resending invite to {0}',
-  SENT_EMAIL: 'Ohhh. Oooohhhh. You should really check your email.',
+  SENT_EMAIL: 'You should really check your email.',
   DEFAULT_SUBJECT: 'Confirm your email!'
 }

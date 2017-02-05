@@ -12,7 +12,7 @@ const nodemailer = require('nodemailer')
 const wellknown = require('nodemailer-wellknown')
 const handlebars = require('handlebars')
 const createServer = require('./server')
-const { format } = require('./utils')
+const { format, moan } = require('./utils')
 const EMAIL_TEMPLATE_PATH = path.resolve(__dirname, './templates/confirm-email/index-inlined-styles.hbs')
 const DEFAULT_CONFIRM_EMAIL_TEMPLATE_ARGS = {
   action: {
@@ -132,7 +132,7 @@ module.exports = function createInviteBot (bot, opts={}) {
     debug(`sent an email to user ${user.id} at ${user.email}`)
     yield bot.send({
       userId: user.id,
-      object: STRINGS.SENT_EMAIL
+      object: `${moan()}.. ${moan()}... ${STRINGS.SENT_EMAIL}`
     })
   })
 

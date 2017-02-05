@@ -8,3 +8,12 @@ exports.format = function format (str, ...args) {
     ;
   })
 }
+
+exports.moan = function (min=2, max=30) {
+  const length = min + Math.random() * (max - min)
+  return `${randomRepeat('o', length / 3)}${randomRepeat('h', 2 * length / 3)}`
+}
+
+function randomRepeat (str, length) {
+  return str.repeat(1 + Math.random() * length | 0)
+}
