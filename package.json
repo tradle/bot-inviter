@@ -1,0 +1,25 @@
+{
+  "name": "@tradle/invitebot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tradle/invitebot"
+  },
+  "keywords": [
+    "tradle",
+    "chatbot",
+    "bot"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.4.7",
+    "clone": "^2.1.0",
+    "express": "^4.14.1",
+    "handlebars": "^4.0.6",
+    "nodemailer": "^3.0.2",
+    "nodemailer-wellknown": "^0.2.1",
+    "object.omit": "^2.0.1",
+    "xtend": "^4.0.1"
+  }
+}
