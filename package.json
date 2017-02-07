@@ -15,6 +15,7 @@
   "dependencies": {
     "bluebird": "^3.4.7",
     "clone": "^2.1.0",
+    "co-express": "mvayngrib/co-express#no-co",
     "express": "^4.14.1",
     "handlebars": "^4.0.6",
     "nodemailer": "^3.0.2",

@@ -1,13 +1,16 @@
 const debug = require('debug')('tradle:bot:invite:server')
 const express = require('express')
-const Promise = require('bluebird')
-const promisifyAll = Promise.promisifyAll
+const wrap = require('co-express')
+const {
+  promisifyAll
+} = require('./utils')
+
 const STRINGS = require('./strings')
 
-module.exports = function ({ bot, port }) {
+module.exports = function createConfirmationServer ({ bot, port, onconfirmed }) {
   const app = express()
   const server = promisifyAll(app.listen(port))
-  app.get('/confirmemail/:code', function (req, res) {
+  app.get('/confirmemail/:code', wrap(function* (req, res) {
     const code = req.params.code
     const userId = bot.shared.get(code)
     if (!userId) {
@@ -19,15 +22,9 @@ module.exports = function ({ bot, port }) {
       return res.status(500).send(STRINGS.SOMETHING_WENT_WRONG)
     }
 
-    user.emailConfirmed = true
-    bot.users.save(user)
-    bot.send({
-      userId,
-      object: STRINGS.EMAIL_CONFIRMED
-    })
-
-    res.send(STRINGS.EMAIL_CONFIRMED)
-  })
+    const responseMsg = yield onconfirmed({ user })
+    res.send(responseMsg)
+  }))
 
   app.use(function defaultErrorHandler (err, req, res, next) {
     debug('something went wrong', err)
