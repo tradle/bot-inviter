@@ -1,10 +1,10 @@
 {
-  "name": "@tradle/invitebot",
+  "name": "@tradle/bot-inviter",
   "version": "1.0.0",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tradle/invitebot"
+    "url": "https://github.com/tradle/bot-inviter"
   },
   "keywords": [
     "tradle",
