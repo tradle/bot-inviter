@@ -4,13 +4,11 @@ const path = require('path')
 const debug = require('debug')('tradle:bot:invite')
 const extend = require('xtend/mutable')
 const clone = require('clone')
-const omit = require('object.omit')
 const nodemailer = require('nodemailer')
 const wellknown = require('nodemailer-wellknown')
 const handlebars = require('handlebars')
 const createServer = require('./server')
 const {
-  Promise,
   co,
   promisifyAll,
   format,
@@ -18,7 +16,7 @@ const {
   humanize
 } = require('./utils')
 
-function loadTemplates () {
+const templates = (function loadTemplates () {
   const dirs = {
     confirmEmail: './templates/confirm-email/',
     notifyInviter: './templates/notify-email/'
@@ -26,12 +24,12 @@ function loadTemplates () {
 
   const templates = {}
   for (let name in dirs) {
-    let file = .map(dir => path.resolve(__dirname, dirs[name], 'index-inlined-styles.hbs'))
+    let file = path.resolve(__dirname, dirs[name], 'index-inlined-styles.hbs')
     templates[name] = fs.readFileSync(file, { encoding: 'utf8' })
   }
 
   return templates
-}
+}())
 
 const DEFAULT_CONFIRM_EMAIL_TEMPLATE_ARGS = {
   action: {
@@ -70,6 +68,8 @@ const BASIC_INFO_REQUEST = {
   form: 'tradle.BetaTesterContactInfo',
   message: STRINGS.REQUEST_CONTACT_INFO
 }
+
+const TYPE = '_t'
 
 module.exports = function createInviteBot (bot, opts={}) {
   const {
@@ -112,13 +112,13 @@ module.exports = function createInviteBot (bot, opts={}) {
           object: format(STRINGS.RESENDING_INVITE, user.profile.email)
         })
         return sendEmailWithConfirmationLink(user)
-      } else {
-        debug('send user basic contact info form')
-        return bot.send({
-          userId: user.id,
-          object: BASIC_INFO_REQUEST
-        })
       }
+
+      debug('send user basic contact info form')
+      return bot.send({
+        userId: user.id,
+        object: BASIC_INFO_REQUEST
+      })
     }),
     default: function ({ user, object }) {
       debug('send user instructions')
@@ -154,7 +154,7 @@ module.exports = function createInviteBot (bot, opts={}) {
 
       let val = profile[prop]
       // TODO: use the underlying model
-      if (typeof val === 'number' && /date|time/.test(prop)) {
+      if (typeof val === 'number' && isDateOrTime(prop)) {
         val = new Date(val)
       }
 
@@ -207,7 +207,7 @@ module.exports = function createInviteBot (bot, opts={}) {
     const text = object.message
       .toLowerCase()
       .trim()
-      .replace(/\"/g, '') // in case the user types "invite" in quotes
+      .replace(/"/g, '') // in case the user types "invite" in quotes
 
     const respond = banterResponses[text] || banterResponses.default
     return respond(incoming)
@@ -225,7 +225,7 @@ module.exports = function createInviteBot (bot, opts={}) {
       // keep going
     }
 
-    switch (object._t) {
+    switch (object[TYPE]) {
       case 'tradle.SimpleMessage':
         return banter(data)
       case 'tradle.BetaTesterContactInfo':
@@ -244,6 +244,8 @@ module.exports = function createInviteBot (bot, opts={}) {
         }
 
         return sendEmailWithConfirmationLink(user)
+      default:
+        break
     }
 
     // fallback
@@ -318,4 +320,8 @@ function normalizeOpts (opts) {
     notifyInviterTemplate: handlebars.compile(notifyInviterTemplate),
     confirmEmailTemplate: handlebars.compile(confirmEmailTemplate)
   }
+}
+
+function isDateOrTime (prop) {
+  return (/date|time/).test(prop)
 }

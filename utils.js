@@ -9,9 +9,9 @@ exports.promisifyAll = promisifyAll
 // source: http://stackoverflow.com/questions/610406/javascript-equivalent-to-printf-string-format
 exports.format = function format (str, ...args) {
   return str.replace(/{(\d+)}/g, function (match, number) {
-    return typeof args[number] !== 'undefined'
-      ? args[number]
-      : match
+    return typeof args[number] === 'undefined'
+      ? match
+      : args[number]
     ;
   })
 }
@@ -22,13 +22,20 @@ exports.humanize = function humanize (varName) {
   return humanized
 }
 
+/**
+ * Generate a random moan (e.g. ooooooohhhh)
+ */
 exports.moan = function (min=2, max=30) {
+  /* eslint no-mixed-operators: "off" */
   const length = min + Math.random() * (max - min)
-  return `${randomRepeat('o', length / 3)}${randomRepeat('h', 2 * length / 3)}`
+  const o = randomRepeat('o', length / 3)
+  const h = randomRepeat('h', 2 * length / 3)
+  return `${o}${h}`
 }
 
 function randomRepeat (str, length) {
-  return str.repeat(1 + Math.random() * length | 0)
+  /* eslint no-mixed-operators: "off" */
+  return str.repeat(1 + Math.floor(Math.random() * length))
 }
 
 function splitCamelCase (str) {
