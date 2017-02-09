@@ -15,7 +15,7 @@
   "dependencies": {
     "bluebird": "^3.4.7",
     "clone": "^2.1.0",
-    "co-express": "mvayngrib/co-express#no-co",
+    "co-express": "mvayngrib/co-express",
     "express": "^4.14.1",
     "handlebars": "^4.0.6",
     "nodemailer": "^3.0.2",
@@ -23,9 +23,11 @@
     "xtend": "^4.0.1"
   },
   "devDependencies": {
+    "@tradle/bots": "https://github.com/tradle/bots",
     "eslint": "^3.15.0"
   },
   "scripts": {
-    "lint": "eslint --quiet ."
+    "lint": "eslint --quiet .",
+    "start": "bots --conf ./conf.json"
   }
 }
