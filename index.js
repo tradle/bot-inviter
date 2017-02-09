@@ -18,9 +18,19 @@ const {
   humanize
 } = require('./utils')
 
-const templates = {
-  confirmEmail: fs.readFileSync(path.resolve(__dirname, './templates/confirm-email/index-inlined-styles.hbs'), { encoding: 'utf8' }),
-  notifyInviter: fs.readFileSync(path.resolve(__dirname, './templates/notify-email/index-inlined-styles.hbs'), { encoding: 'utf8' })
+function loadTemplates () {
+  const dirs = {
+    confirmEmail: './templates/confirm-email/',
+    notifyInviter: './templates/notify-email/'
+  }
+
+  const templates = {}
+  for (let name in dirs) {
+    let file = .map(dir => path.resolve(__dirname, dirs[name], 'index-inlined-styles.hbs'))
+    templates[name] = fs.readFileSync(file, { encoding: 'utf8' })
+  }
+
+  return templates
 }
 
 const DEFAULT_CONFIRM_EMAIL_TEMPLATE_ARGS = {
@@ -47,8 +57,8 @@ const DEFAULT_OPTS = {
   from: process.env.EMAIL_FROM,
   confirmEmailTemplate: templates.confirmEmail,
   notifyInviterTemplate: templates.notifyInviter,
-  host: 'localhost',
-  port: 38917,
+  host: process.env.HOST || 'localhost',
+  port: process.env.PORT || 38917,
   inviterEmail: 'mark@tradle.io'
 }
 
