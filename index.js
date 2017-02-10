@@ -1,6 +1,7 @@
 const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
+const typeforce = require('typeforce')
 const debug = require('debug')('tradle:bot:invite')
 const extend = require('xtend/mutable')
 const clone = require('clone')
@@ -8,6 +9,7 @@ const nodemailer = require('nodemailer')
 const wellknown = require('nodemailer-wellknown')
 const handlebars = require('handlebars')
 const createServer = require('./server')
+const DEFAULT_TEMPLATES = require('./templates')
 const {
   co,
   promisifyAll,
@@ -16,48 +18,15 @@ const {
   humanize
 } = require('./utils')
 
-const templates = (function loadTemplates () {
-  const dirs = {
-    confirmEmail: './templates/confirm-email/',
-    notifyInviter: './templates/notify-email/'
-  }
-
-  const templates = {}
-  for (let name in dirs) {
-    let file = path.resolve(__dirname, dirs[name], 'index-inlined-styles.hbs')
-    templates[name] = fs.readFileSync(file, { encoding: 'utf8' })
-  }
-
-  return templates
-}())
-
-const DEFAULT_CONFIRM_EMAIL_TEMPLATE_ARGS = {
-  action: {
-    text: 'Confirm Email Address'
-  },
-  blocks: [
-    { body: 'Please confirm your email address by clicking the link below' },
-    { body: 'Once you do, we can send you an invitation to install the Tradle iOS app' }
-  ],
-  signature: 'Tradle team',
-  twitter: 'tradles'
-}
-
-const DEFAULT_NOTIFY_INVITER_EMAIL_TEMPLATE_ARGS = {
-  blocks: [],
-  signature: 'Inviter bot'
-}
-
 const DEFAULT_OPTS = {
   user: process.env.EMAIL_USER,
   pass: process.env.EMAIL_PASS,
   service: process.env.EMAIL_SERVICE,
   from: process.env.EMAIL_FROM,
-  confirmEmailTemplate: templates.confirmEmail,
-  notifyInviterTemplate: templates.notifyInviter,
   host: process.env.HOST || 'localhost',
   port: process.env.PORT || 38917,
-  inviterEmail: 'mark@tradle.io'
+  inviterEmail: process.env.EMAIL_INVITER || process.env.EMAIL_USER,
+  templates: DEFAULT_TEMPLATES
 }
 
 const STRINGS = require('./strings')
@@ -75,8 +44,7 @@ module.exports = function createInviteBot (bot, opts={}) {
   const {
     service,
     auth,
-    confirmEmailTemplate,
-    notifyInviterTemplate,
+    templates,
     from,
     host,
     port,
@@ -92,6 +60,13 @@ module.exports = function createInviteBot (bot, opts={}) {
   // setup email data with unicode symbols
   const baseMailOptions = { from }
   const banterResponses = {
+    spanish: function ({ user, object }) {
+      debug('not speaking spanish')
+      return bot.send({
+        userId: user.id,
+        object: STRINGS.PRESS_2
+      })
+    },
     '2': function ({ user, object }) {
       debug('speaking spanish')
       return bot.send({
@@ -129,46 +104,8 @@ module.exports = function createInviteBot (bot, opts={}) {
     }
   }
 
-  function genConfirmEmail (user) {
-    const subject = STRINGS.DEFAULT_SUBJECT
-    const args = clone(DEFAULT_CONFIRM_EMAIL_TEMPLATE_ARGS)
-    args.blocks.unshift({
-      body: `Hi ${user.profile.firstName}!`
-    })
-
-    args.action.link = `http://${host}:${port}/confirmemail/${user.confirmEmailCode}`
-    const html = confirmEmailTemplate(args)
-    return { html, subject }
-  }
-
-  /**
-   * @param  {Object} user the invitee
-   */
-  function genNotifyInviterEmail (user) {
-    const subject = format(STRINGS.NOTIFY_INVITER, user.profile.firstName, user.profile.lastName)
-    const args = clone(DEFAULT_NOTIFY_INVITER_EMAIL_TEMPLATE_ARGS)
-    args.blocks.push({ body: STRINGS.APPLICATION_DETAILS })
-    const profile = user.profile
-    for (let prop in profile) {
-      if (prop[0] === '_') continue
-
-      let val = profile[prop]
-      // TODO: use the underlying model
-      if (typeof val === 'number' && isDateOrTime(prop)) {
-        val = new Date(val)
-      }
-
-      args.blocks.push({
-        body: `${humanize(prop)}: ${val}`
-      })
-    }
-
-    const html = notifyInviterTemplate(args)
-    return { html, subject }
-  }
-
   const sendEmailWithConfirmationLink = co(function* (user) {
-    const { html, subject } = genConfirmEmail(user)
+    const { html, subject } = templates.email.invite(user, { host, port })
     yield sendEmail(extend({
       subject,
       html
@@ -182,7 +119,7 @@ module.exports = function createInviteBot (bot, opts={}) {
   })
 
   function notifyInviter (invitee) {
-    const emailData = genNotifyInviterEmail(invitee)
+    const emailData = templates.email.notifyInviter(invitee)
     return sendEmail(extend(emailData, { email: inviterEmail }))
   }
 
@@ -253,22 +190,25 @@ module.exports = function createInviteBot (bot, opts={}) {
   }))
 
   const onconfirmed = co(function* ({ user }) {
-    const msg = user.emailConfirmed
-      ? STRINGS.ALREADY_CONFIRMED
-      : STRINGS.EMAIL_CONFIRMED
-
-    if (!user.emailConfirmed) {
+    const { emailConfirmed } = user
+    let msg
+    if (emailConfirmed) {
+      msg = STRINGS.ALREADY_CONFIRMED
+    } else {
+      msg = STRINGS.EMAIL_CONFIRMED
       user.emailConfirmed = true
       bot.users.save(user)
+      notifyInviter(user)
+      bot.send({
+        userId: user.id,
+        object: msg
+      })
     }
 
-    yield bot.send({
-      userId: user.id,
-      object: msg
+    return templates.page.confirmation({
+      header: emailConfirmed ? STRINGS.NICE_TO_SEE_YOU_AGAIN : STRINGS.EXCELLENT,
+      blocks: [{ body: msg }]
     })
-
-    yield notifyInviter(user)
-    return msg
   })
 
   const server = createServer({ bot, port, onconfirmed })
@@ -279,49 +219,46 @@ module.exports = function createInviteBot (bot, opts={}) {
 }
 
 function normalizeOpts (opts) {
-  opts = extend({}, DEFAULT_OPTS, opts)
-  let {
-    user,
-    pass,
-    service,
-    host,
-    port,
-    from,
-    inviterEmail,
-    notifyInviterTemplate,
-    confirmEmailTemplate
-  } = opts
+  const normalized = extend({}, DEFAULT_OPTS, opts)
+  typeforce({
+    user: 'String',
+    pass: 'String',
+    service: 'String',
+    templates: 'Object'
+  }, normalized)
 
-  if (!(user && pass && service && inviterEmail)) {
-    throw new Error('expected "user", "pass", "service", and "inviterEmail"')
-  }
-
-  service = service.toLowerCase()
+  validateTemplateOpts(normalized.templates)
+  const { user, pass, service, from, templates } = normalized
+  normalized.auth = { user, pass }
+  normalized.service = service.toLowerCase()
   const serviceConfig = wellknown(service)
   if (!serviceConfig) {
     throw new Error(`unsupported service ${service}, see https://nodemailer.com/smtp/well-known/`)
   }
 
-  if (!from) {
+  if (!normalized.from) {
     // TODO: this might not be right
     // check how nodemailer figures out the email
     const domain = serviceConfig.domains ? serviceConfig.domains[0] : serviceConfig.host
-    from = user.indexOf('@') === -1 ? `${user}@${domain}` : user
+    normalized.from = user.indexOf('@') === -1 ? `${user}@${domain}` : user
     debug(`warn: as "from" was not specified, defaulting to ${from}`)
   }
 
-  return {
-    service,
-    auth: { user, pass },
-    host,
-    port,
-    from,
-    inviterEmail,
-    notifyInviterTemplate: handlebars.compile(notifyInviterTemplate),
-    confirmEmailTemplate: handlebars.compile(confirmEmailTemplate)
-  }
+  return normalized
 }
 
-function isDateOrTime (prop) {
-  return (/date|time/).test(prop)
+function validateTemplateOpts (opts) {
+  typeforce({
+    email: 'Object',
+    page: 'Object'
+  }, opts)
+
+  typeforce({
+    invite: 'Function',
+    notifyInviter: 'Function',
+  }, opts.email)
+
+  typeforce({
+    confirmation: 'Function'
+  }, opts.page)
 }

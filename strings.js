@@ -2,6 +2,7 @@ module.exports = {
   GREETING: 'Greetings from Hackathon Bot. What would you like to do?',
   SPANISH: 'Donde esta la biblioteca? ...yep, that\'s all I got.',
   INSTRUCTIONS: 'For Spanish, press 2. To get an invite to the Tradle mobile app, type "invite". To repeat this menu, type anything else.',
+  PRESS_2: 'I said press 2!',
   SOMETHING_WENT_WRONG: 'Something went horribly wrong',
   PAGE_NOT_FOUND: 'Paradoxically, this page does not exist',
   EMAIL_CONFIRMED: 'Your email address has been confirmed. I apologize for ever doubting you. You should receive an invite shortly. Not that it\'s up to me...',
@@ -11,5 +12,7 @@ module.exports = {
   SENT_EMAIL: 'You should really check your email.',
   DEFAULT_SUBJECT: 'Confirm your email!',
   NOTIFY_INVITER: 'Beta Tester "{0} {1}" is getting impatient',
-  APPLICATION_DETAILS: 'Application Details'
+  APPLICATION_DETAILS: 'Application Details',
+  EXCELLENT: 'Excellent!',
+  NICE_TO_SEE_YOU_AGAIN: 'Nice to see you again?',
 }
