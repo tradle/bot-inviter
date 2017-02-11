@@ -8,7 +8,10 @@ const {
   format,
   humanize
 } = require('./utils')
+
+const apk = 'https://drive.google.com/file/d/0B9WCrc0NQvW0Z0IyTTFEZ3J3VjQ/view'
 const DEFAULT_CONFIRM_ARGS = {
+  apk,
   action: {
     text: 'Confirm Email Address'
   },
@@ -36,6 +39,7 @@ const templates = {
 }
 
 function genConfirmationPage (templateArgs) {
+  templateArgs.apk = apk
   return templates.page.confirmation(templateArgs)
 }
 
