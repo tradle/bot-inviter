@@ -1,9 +1,0 @@
-{
-  "port": 8080,
-  "repl": "\uD83C\uDF36  ",
-  "providerURL": "http://botserver.tradle.io/inviter",
-  "dir": "./storage",
-  "strategies": [
-    "./"
-  ]
-}
