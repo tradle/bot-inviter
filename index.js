@@ -2,6 +2,7 @@ const crypto = require('crypto')
 const typeforce = require('typeforce')
 const extend = require('xtend/mutable')
 const shallowClone = require('xtend')
+const shallowExtend = require('xtend/mutable')
 const nodemailer = require('nodemailer')
 const wellknown = require('nodemailer-wellknown')
 const createServer = require('./server')
@@ -78,7 +79,7 @@ module.exports = function createInviteBot (bot, opts={}) {
     if (!template) throw new Error('expected "template" function')
 
     const confirmationCode = newCode()
-    yield bot.shared.set(getConfirmationCodeToEmailStorageKey(confirmationCode), { email })
+    yield bot.shared.set(getConfirmationCodeToEmailStorageKey(confirmationCode), { email, inviter: inviter.id })
     console.log('confirmation code: ' + confirmationCode)
     const emailData = template({
       inviter,
@@ -125,24 +126,22 @@ module.exports = function createInviteBot (bot, opts={}) {
   }
 
   const processConfirmationCode = co(function* ({ code, user }) {
-    let email
+    let invitation
     try {
       const userId = yield bot.shared.get(getConfirmationCodeToUserStorageKey(code))
       user = yield bot.users.get(userId)
     } catch (err) {
       if (!user) throw new Error('expected "user"')
 
-      const temp = yield bot.shared.get(getConfirmationCodeToEmailStorageKey(code))
-      email = temp.email
+      invitation = yield bot.shared.get(getConfirmationCodeToEmailStorageKey(code))
     }
 
     const storage = ensureInviterStorage({ user })
-    if (email) {
-      storage.email = email
-    } else {
-      email = storage.email
+    if (invitation) {
+      shallowExtend(storage, invitation)
     }
 
+    const { email, inviter } = storage
     const wasConfirmed = storage.emailConfirmed
     if (!wasConfirmed) {
       storage.emailConfirmed = true
@@ -150,7 +149,7 @@ module.exports = function createInviteBot (bot, opts={}) {
     }
 
     yield onConfirmed({ user, wasConfirmed, email })
-    return { user, wasConfirmed, email }
+    return { user, wasConfirmed, email, inviter }
   })
 
   function ensureInviterStorage ({ user }) {
