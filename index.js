@@ -1,4 +1,5 @@
 const crypto = require('crypto')
+const ip = require('ip')
 const typeforce = require('typeforce')
 const extend = require('xtend/mutable')
 const shallowClone = require('xtend')
@@ -17,7 +18,7 @@ const DEFAULT_OPTS = {
   pass: process.env.EMAIL_PASS,
   service: process.env.EMAIL_SERVICE,
   from: process.env.EMAIL_FROM,
-  host: process.env.HOST || 'localhost',
+  host: process.env.HOST || ip.address(),
   port: process.env.PORT || 38917,
   inviterEmail: process.env.EMAIL_INVITER || process.env.EMAIL_USER
 }

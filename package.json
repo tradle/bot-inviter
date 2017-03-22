@@ -17,6 +17,7 @@
     "bluebird": "^3.4.7",
     "co-express": "mvayngrib/co-express",
     "express": "^4.14.1",
+    "ip": "^1.1.5",
     "nodemailer": "^3.0.2",
     "nodemailer-wellknown": "^0.2.1",
     "typeforce": "^1.10.6",
