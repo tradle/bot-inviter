@@ -1,15 +1,12 @@
 const debug = require('debug')('tradle:bot:invite:server')
 const express = require('express')
 const wrap = require('co-express')
-const {
-  promisifyAll
-} = require('./utils')
 
 const STRINGS = require('./strings')
 
-module.exports = function createConfirmationServer ({ bot, port, processConfirmationCode, renderConfirmationPage }) {
-  const app = express()
-  const server = promisifyAll(app.listen(port))
+module.exports = function createConfirmationServer ({ bot, router, port, processConfirmationCode, renderConfirmationPage }) {
+  const app = router || express()
+  const server = router ? null : app.listen(port)
   app.get('/confirmemail/:code', wrap(function* (req, res) {
     const code = req.params.code
     try {

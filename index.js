@@ -33,6 +33,7 @@ module.exports = function createInviteBot (bot, opts={}) {
     from,
     host,
     port,
+    router,
     inviterEmail,
     renderConfirmationPage,
     onConfirmed=promiseNoop,
@@ -166,6 +167,7 @@ module.exports = function createInviteBot (bot, opts={}) {
     emailInvite,
     sendEmail,
     server: createServer({
+      router,
       bot,
       port,
       processConfirmationCode,
