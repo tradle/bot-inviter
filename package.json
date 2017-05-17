@@ -13,7 +13,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@tradle/bots": "tradle/bots#dev",
+    "@tradle/bots": "^2",
     "bluebird": "^3.4.7",
     "co-express": "mvayngrib/co-express",
     "express": "^4.14.1",
